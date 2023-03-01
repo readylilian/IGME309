@@ -19,6 +19,8 @@ class MyMesh
 	std::vector<vector3> m_lVertexPos;	//List of Vertices
 	std::vector<vector3> m_lVertexCol;	//List of Colors
 
+	std::vector<MyMesh*> m_pMeshList;
+
 	ShaderManager* m_pShaderMngr = nullptr;	//Shader Manager
 
 public:
