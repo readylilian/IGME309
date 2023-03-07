@@ -19,8 +19,6 @@ class MyMesh
 	std::vector<vector3> m_lVertexPos;	//List of Vertices
 	std::vector<vector3> m_lVertexCol;	//List of Colors
 
-	std::vector<MyMesh*> m_pMeshList;
-
 	ShaderManager* m_pShaderMngr = nullptr;	//Shader Manager
 
 public:
@@ -70,38 +68,59 @@ public:
 	*/
 	void Swap(MyMesh& other);
 	/*
-	USAGE: Completes the information missing to create the mesh
-	ARGUMENTS: ---
+	USAGE: Completes the information missing to create the mesh.
+	This method iterates through the mesh's vertex information and pairs each position with
+	a color to "complete" the mesh for rendering. As of right now the method completes the mesh with only colors but
+	it is possible to add other attribute information such as normals, binormals, etc.
+
+	ARGUMENTS: - vector3 a_v3Color -> vector input -> vector3(r-value, g-value, b-value)
+	This argument will be what the color of the mesh is in the form of a vector3 with 1.0 representing 100% in
+	an rgb value. For example vector3(1.0f, 0.0f, 0.0f) is red and vector3(0.0f, 0.0f, 1.0f) is blue.
 	OUTPUT: ---
 	*/
 	void CompleteMesh(vector3 a_v3Color = vector3(1.0f, 0.0f, 0.0f));
 	/*
 	USAGE: Adds a new point to the vector of vertices
+	These vertices will be displayed at the position in 3D-space entered once the mesh is rendered.
 	ARGUMENTS:
-	-	vector3 a_v3Input -> vector input
+	-	vector3 a_v3Input -> vector input -> vector3(x-value, y-value, z-value)
+	This argument will be what the position of the vertex is in the form of a vector3 with 1.0 representing 1 unit in
+	an x, y, or z value. vector3(0.0f) will represent the origin of the mesh, not the origin in global space. This would make
+	a vertex including a vector3(0.0f, 1.0f, 0.0f) have a position 1 unit in the y-direction relative to the origin of the mesh
 	OUTPUT: ---
 	*/
 	void AddVertexPosition(vector3 a_v3Input);
 	/*
 	USAGE: Adds a new color to the vector of vertices
+	These vertices will be paired with positional vertices to add color to the mesh.
 	ARGUMENTS:
-	-	vector3 a_v3Input -> vector input
+	-	vector3 a_v3Input -> vector input -> vector3(r-value, g-value, b-value)
+	This argument will be what the color of the vertex is in the form of a vector3 with 1.0 representing 100% in
+	an rgb value. For example vector3(1.0f, 0.0f, 0.0f) is red and vector3(0.0f, 0.0f, 1.0f) is blue.
 	OUTPUT: ---
 	*/
 	void AddVertexColor(vector3 a_v3Input);
 	/*
 	USAGE: Compiles the MyMesh for OpenGL 3.X use
+	This method prepares the mesh to be rendered by generating and binding the VAO & VBO,
+	opening up enough space for the VBO to use certain attributes,
+	and then binding those attributes. The VAO will be unbinded at the end so it does not
+	interfere with generation of other meshes.
 	ARGUMENTS: ---
 	OUTPUT: ---
 	*/
 	void CompileOpenGL3X(void);
 	/*
 	USAGE: Renders the mesh on the specified position by the
-	provided camera view and projection
+	provided camera view and projection.
 	ARGUMENTS:
 	-	matrix4 a_mProjection -> Projection matrix
 	-	matrix4 a_mView -> View matrix
 	-	matrix4 a_mModel -> matrix of the model in the world
+		The model matrix will include information for different transformations applied
+		to the mesh once it is in the world such as translation, rotation, and scale. This is the difference
+		between positions in the mesh with vertices entered in the mesh being relative to the mesh's origin
+		and the transformatons applied in the model matrix being in global space.
 	OUTPUT: ---
 	*/
 	void Render(matrix4 a_mProjection, matrix4 a_mView, matrix4 a_mModel);

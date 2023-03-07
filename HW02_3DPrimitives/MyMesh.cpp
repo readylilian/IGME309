@@ -59,9 +59,25 @@ void MyMesh::GenerateCone(float a_fRadius, float a_fHeight, int a_nSubdivisions,
 
 	Release();
 	Init();
-
-	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
+	float incrementCount = 360.0/a_nSubdivisions;
+	float piToDeg = PI / 180;
+	//For however many n, add as many subdivisions
+	for (int i = 0; i < a_nSubdivisions; i++)
+	{
+		//Separated these out here to shorten line length for clarity
+		float angleOne = (incrementCount * i) * piToDeg;
+		float angleTwo = (incrementCount * (i + 1)) * piToDeg;
+		//Circular base
+		AddTri(
+			vector3(0.0f, 0.0f, -a_fHeight / 2),
+			vector3(cos(angleOne) * a_fRadius, sin(angleOne) * a_fRadius, -a_fHeight / 2),
+			vector3(cos(angleTwo) * a_fRadius, sin(angleTwo) * a_fRadius, -a_fHeight / 2));
+		//Conical point
+		AddTri(
+			vector3(0.0f, 0.0f, a_fHeight/2),
+			vector3(cos(angleTwo) * a_fRadius, sin(angleTwo) * a_fRadius, -a_fHeight / 2),
+			vector3(cos(angleOne) * a_fRadius, sin(angleOne) * a_fRadius, -a_fHeight / 2));
+	}
 	// -------------------------------
 
 	// Adding information about color
@@ -84,8 +100,30 @@ void MyMesh::GenerateCylinder(float a_fRadius, float a_fHeight, int a_nSubdivisi
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
+	float incrementCount = 360.0 / a_nSubdivisions;
+	float piToDeg = PI / 180;
+	//For however many n, add as many subdivisions
+	for (int i = 0; i < a_nSubdivisions; i++)
+	{
+		float angleOne = (incrementCount * i) * piToDeg;
+		float angleTwo = (incrementCount * (i + 1)) * piToDeg;
+		//Circular bases
+		//Split the height to center it
+		AddTri(
+			vector3(0.0f, 0.0f, -a_fHeight / 2),
+			vector3(cos(angleTwo) * a_fRadius, sin(angleTwo) * a_fRadius, -a_fHeight / 2),
+			vector3(cos(angleOne) * a_fRadius, sin(angleOne) * a_fRadius, -a_fHeight / 2));
+		AddTri(
+			vector3(0.0f, 0.0f, a_fHeight / 2),
+			vector3(cos(angleOne) * a_fRadius, sin(angleOne) * a_fRadius, a_fHeight / 2),
+			vector3(cos(angleTwo) * a_fRadius, sin(angleTwo) * a_fRadius, a_fHeight / 2));
+		//Connect the bases with quads
+		AddQuad(
+			vector3(cos(angleOne) * a_fRadius, sin(angleOne) * a_fRadius, -a_fHeight / 2),
+			vector3(cos(angleTwo) * a_fRadius, sin(angleTwo) * a_fRadius, -a_fHeight / 2),
+			vector3(cos(angleOne) * a_fRadius, sin(angleOne) * a_fRadius, a_fHeight / 2),
+			vector3(cos(angleTwo) * a_fRadius, sin(angleTwo) * a_fRadius, a_fHeight / 2));
+	}
 	// -------------------------------
 
 	// Adding information about color
@@ -114,8 +152,42 @@ void MyMesh::GenerateTube(float a_fOuterRadius, float a_fInnerRadius, float a_fH
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fOuterRadius * 2.0f, a_v3Color);
+	float incrementCount = 360.0 / a_nSubdivisions;
+	float piToDeg = PI / 180;
+	//For however many n, add as many subdivisions
+	for (int i = 0; i < a_nSubdivisions; i++)
+	{
+		float angleOne = (incrementCount * i) * piToDeg;
+		float angleTwo = (incrementCount * (i + 1)) * piToDeg;
+		//Outer
+		AddQuad(
+			vector3(cos(angleOne) * a_fOuterRadius, sin(angleOne) * a_fOuterRadius, -a_fHeight / 2),
+			vector3(cos(angleTwo) * a_fOuterRadius, sin(angleTwo) * a_fOuterRadius, -a_fHeight / 2),
+			vector3(cos(angleOne) * a_fOuterRadius, sin(angleOne) * a_fOuterRadius, a_fHeight / 2),
+			vector3(cos(angleTwo) * a_fOuterRadius, sin(angleTwo) * a_fOuterRadius, a_fHeight / 2)
+		);
+		//Inner
+		AddQuad(
+			vector3(cos(angleOne) * a_fInnerRadius, sin(angleOne) * a_fInnerRadius, a_fHeight / 2),
+			vector3(cos(angleTwo) * a_fInnerRadius, sin(angleTwo) * a_fInnerRadius, a_fHeight / 2),
+			vector3(cos(angleOne) * a_fInnerRadius, sin(angleOne) * a_fInnerRadius, -a_fHeight / 2),
+			vector3(cos(angleTwo) * a_fInnerRadius, sin(angleTwo) * a_fInnerRadius, -a_fHeight / 2)
+		);
+		//Then connect Top
+		AddQuad(
+			vector3(cos(angleOne) * a_fOuterRadius, sin(angleOne) * a_fOuterRadius, a_fHeight / 2),
+			vector3(cos(angleTwo) * a_fOuterRadius, sin(angleTwo) * a_fOuterRadius, a_fHeight / 2),
+			vector3(cos(angleOne) * a_fInnerRadius, sin(angleOne) * a_fInnerRadius, a_fHeight / 2),
+			vector3(cos(angleTwo) * a_fInnerRadius, sin(angleTwo) * a_fInnerRadius, a_fHeight / 2)
+		);
+		//Bottom
+		AddQuad(
+			vector3(cos(angleOne) * a_fInnerRadius, sin(angleOne) * a_fInnerRadius, -a_fHeight / 2),
+			vector3(cos(angleTwo) * a_fInnerRadius, sin(angleTwo) * a_fInnerRadius, -a_fHeight / 2),
+			vector3(cos(angleOne) * a_fOuterRadius, sin(angleOne) * a_fOuterRadius, -a_fHeight / 2),
+			vector3(cos(angleTwo) * a_fOuterRadius, sin(angleTwo) * a_fOuterRadius, -a_fHeight / 2)
+		);
+	}
 	// -------------------------------
 
 	// Adding information about color
@@ -145,9 +217,37 @@ void MyMesh::GenerateTorus(float a_fOuterRadius, float a_fInnerRadius, int a_nSu
 
 	Release();
 	Init();
+	//Around the circle
+	float incrementCountA = 360.0 / a_nSubdivisionsA;
+	//For each subsection
+	float incrementCountB = 360.0 / a_nSubdivisionsB;
 
-	// Replace this with your code
-	GenerateCube(a_fOuterRadius * 2.0f, a_v3Color);
+	float a = (a_fOuterRadius - a_fInnerRadius) / 2;
+	float c = (a + a_fInnerRadius);
+	float piToDeg = PI / 180;
+	for (int i = 0; i < a_nSubdivisionsA; i++)
+	{
+		float angleOneA = (incrementCountA * i) * piToDeg;
+		float angleTwoA = (incrementCountA * (i + 1)) * piToDeg;
+
+		for (int j = 0; j < a_nSubdivisionsB; j++)
+		{
+			float angleOneB = (incrementCountB * j) * piToDeg;
+			float angleTwoB = (incrementCountB * (j + 1)) * piToDeg;
+			
+			vector3 pointA = vector3(cos(angleOneA) * (a * cos(angleOneB) + c), sin(angleOneA) * (a * cos(angleOneB) + c), a * sin(angleOneB));
+			vector3 pointB = vector3(cos(angleOneA) * (a * cos(angleTwoB) + c), sin(angleOneA) * (a * cos(angleTwoB) + c), a * sin(angleTwoB));
+			vector3 pointC = vector3(cos(angleTwoA) * (a * cos(angleOneB) + c), sin(angleTwoA) * (a * cos(angleOneB) + c), a * sin(angleOneB));
+			vector3 pointD = vector3(cos(angleTwoA) * (a * cos(angleTwoB) + c), sin(angleTwoA) * (a * cos(angleTwoB) + c), a * sin(angleTwoB));
+			
+			AddQuad(
+				pointC,
+				pointD,
+				pointA,
+				pointB
+			);
+		}
+	}
 	// -------------------------------
 
 	// Adding information about color
@@ -171,8 +271,51 @@ void MyMesh::GenerateSphere(float a_fRadius, int a_nSubdivisions, vector3 a_v3Co
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
+	//Around the circle
+	float incrementCountA = 360.0 / a_nSubdivisions;
+	//For each subsection
+	float incrementCountB = 90.0 / a_nSubdivisions;
+
+	float a = a_fRadius;
+	float piToDeg = PI / 180;
+	
+	for (int i = 0; i < a_nSubdivisions; i++)
+	{
+		float angleOneA = (incrementCountA * i) * piToDeg;
+		float angleTwoA = (incrementCountA * (i + 1)) * piToDeg;
+
+		for (int j = 0; j < a_nSubdivisions; j++)
+		{
+			float angleOneB = (incrementCountB * j) * piToDeg;
+			float angleTwoB = (incrementCountB * (j + 1)) * piToDeg;
+
+			//Top half
+			vector3 pointA = vector3(a * cos(angleOneA) * sin(angleOneB), a * sin(angleOneA) * sin(angleOneB), a * cos(angleOneB));
+			vector3 pointB = vector3(a * cos(angleOneA) * sin(angleTwoB), a * sin(angleOneA) * sin(angleTwoB), a * cos(angleTwoB));
+			vector3 pointC = vector3(a * cos(angleTwoA) * sin(angleOneB), a * sin(angleTwoA) * sin(angleOneB), a * cos(angleOneB));
+			vector3 pointD = vector3(a * cos(angleTwoA) * sin(angleTwoB), a * sin(angleTwoA) * sin(angleTwoB), a * cos(angleTwoB));
+			
+			AddQuad(
+				pointB,
+				pointD,
+				pointA,
+				pointC
+			);
+
+			//Bottom half
+			pointA = vector3(a * cos(angleOneA) * sin(angleOneB), a * sin(angleOneA) * sin(angleOneB), a * -cos(angleOneB));
+			pointB = vector3(a * cos(angleOneA) * sin(angleTwoB), a * sin(angleOneA) * sin(angleTwoB), a * -cos(angleTwoB));
+			pointC = vector3(a * cos(angleTwoA) * sin(angleOneB), a * sin(angleTwoA) * sin(angleOneB), a * -cos(angleOneB));
+			pointD = vector3(a * cos(angleTwoA) * sin(angleTwoB), a * sin(angleTwoA) * sin(angleTwoB), a * -cos(angleTwoB));
+
+			AddQuad(
+				pointA,
+				pointC,
+				pointB,
+				pointD
+			);
+		}
+	}
 	// -------------------------------
 
 	// Adding information about color
