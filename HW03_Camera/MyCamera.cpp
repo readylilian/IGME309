@@ -26,11 +26,27 @@ void MyCamera::MoveForward(float a_fDistance)
 }
 void MyCamera::MoveVertical(float a_fDistance)
 {
-	//Tip:: Look at MoveForward
+	//Tips:: Moving will modify both positional and directional vectors,
+	//		 here we only modify the positional.
+	//       The code below "works" because we wrongly assume the forward 
+	//		 vector is going in the global -Z but if you look at the demo 
+	//		 in the _Binary folder you will notice that we are moving 
+	//		 backwards and we never get closer to the plane as we should 
+	//		 because as we are looking directly at it.
+	m_v3Position += vector3(0.0f, a_fDistance, 0.0f);
+	m_v3Target += vector3(0.0f, a_fDistance, 0.0f);
 }
 void MyCamera::MoveSideways(float a_fDistance)
 {
-	//Tip:: Look at MoveForward
+	//Tips:: Moving will modify both positional and directional vectors,
+	//		 here we only modify the positional.
+	//       The code below "works" because we wrongly assume the forward 
+	//		 vector is going in the global -Z but if you look at the demo 
+	//		 in the _Binary folder you will notice that we are moving 
+	//		 backwards and we never get closer to the plane as we should 
+	//		 because as we are looking directly at it.
+	m_v3Position += vector3(a_fDistance, 0.0f, 0.0f);
+	m_v3Target += vector3(a_fDistance, 0.0f, 0.0f);
 }
 void MyCamera::CalculateView(void)
 {
@@ -40,7 +56,18 @@ void MyCamera::CalculateView(void)
 	//		 it will receive information from the main code on how much these orientations
 	//		 have change so you only need to focus on the directional and positional 
 	//		 vectors. There is no need to calculate any right click process or connections.
+	
+	quaternion q1 = glm::angleAxis(1.0f, vector3(m_v3PitchYawRoll.x, m_v3PitchYawRoll.y, 0.0f));
+	m_v3Target = m_v3Target  * q1;
+	
+	if (m_v3Target.y >= 90)
+	{
+		m_v3Target.y = 89;
+	}
 	m_m4View = glm::lookAt(m_v3Position, m_v3Target, m_v3Upward);
+	
+	
+	m_v3PitchYawRoll = vector3(0.0f, 0.0f, 0.0f);
 }
 //You can assume that the code below does not need changes unless you expand the functionality
 //of the class or create helper methods, etc.
