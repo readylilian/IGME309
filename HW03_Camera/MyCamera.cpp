@@ -21,8 +21,10 @@ void MyCamera::MoveForward(float a_fDistance)
 	//		 in the _Binary folder you will notice that we are moving 
 	//		 backwards and we never get closer to the plane as we should 
 	//		 because as we are looking directly at it.
-	m_v3Position += vector3(0.0f, 0.0f, a_fDistance);
-	m_v3Target += vector3(0.0f, 0.0f, a_fDistance);
+	
+	//Always just move in the forward direction
+	m_v3Position += m_v3Forward * a_fDistance;
+	m_v3Target += m_v3Forward * a_fDistance;
 }
 void MyCamera::MoveVertical(float a_fDistance)
 {
@@ -33,8 +35,12 @@ void MyCamera::MoveVertical(float a_fDistance)
 	//		 in the _Binary folder you will notice that we are moving 
 	//		 backwards and we never get closer to the plane as we should 
 	//		 because as we are looking directly at it.
-	m_v3Position += vector3(0.0f, a_fDistance, 0.0f);
-	m_v3Target += vector3(0.0f, a_fDistance, 0.0f);
+	
+	//Exclude x & z so you don't move left or right while moving vertically
+	//Up is the cross product of forward and left, so take negative right
+	vector3 up = glm::cross(m_v3Forward, -m_v3Rightward);
+	m_v3Position += vector3(0.0f, up.y * a_fDistance, 0.0f);
+	m_v3Target += vector3(0.0f, up.y * a_fDistance, 0.0f);
 }
 void MyCamera::MoveSideways(float a_fDistance)
 {
@@ -45,8 +51,10 @@ void MyCamera::MoveSideways(float a_fDistance)
 	//		 in the _Binary folder you will notice that we are moving 
 	//		 backwards and we never get closer to the plane as we should 
 	//		 because as we are looking directly at it.
-	m_v3Position += vector3(a_fDistance, 0.0f, 0.0f);
-	m_v3Target += vector3(a_fDistance, 0.0f, 0.0f);
+	
+	//Exlude y so you don't move vertically while pressing sideways
+	m_v3Position += vector3(m_v3Rightward.x * a_fDistance, 0.0f, m_v3Rightward.z * a_fDistance);
+	m_v3Target += vector3(m_v3Rightward.x * a_fDistance, 0.0f, m_v3Rightward.z * a_fDistance);
 }
 void MyCamera::CalculateView(void)
 {
@@ -57,16 +65,22 @@ void MyCamera::CalculateView(void)
 	//		 have change so you only need to focus on the directional and positional 
 	//		 vectors. There is no need to calculate any right click process or connections.
 	
-	quaternion q1 = glm::angleAxis(1.0f, vector3(m_v3PitchYawRoll.x, m_v3PitchYawRoll.y, 0.0f));
-	m_v3Target = m_v3Target  * q1;
+	//Make pitch and yaw into quaterions
+	quaternion q1 = glm::angleAxis(m_v3PitchYawRoll.x, vector3(1.0f,0.0f,0.0f));
+	quaternion q2 = glm::angleAxis(m_v3PitchYawRoll.y, vector3(0.0f, 1.0f, 0.0f));
 	
-	if (m_v3Target.y >= 90)
-	{
-		m_v3Target.y = 89;
-	}
-	m_m4View = glm::lookAt(m_v3Position, m_v3Target, m_v3Upward);
+	//Orientation is these two combined
+	quaternion orientation = q1 * q2;
+
+	//Rotate forward and right by the orientation
+	m_v3Forward = glm::rotate(orientation, m_v3Forward);
+	m_v3Rightward = glm::rotate(orientation, m_v3Rightward);
+	//Set target to forward
+	m_v3Target = m_v3Forward;
 	
+	m_m4View = glm::lookAt(m_v3Position, m_v3Position + m_v3Target, m_v3Upward);
 	
+	//Reset pitch yaw roll each time
 	m_v3PitchYawRoll = vector3(0.0f, 0.0f, 0.0f);
 }
 //You can assume that the code below does not need changes unless you expand the functionality

@@ -53,9 +53,16 @@ void Application::Display(void)
 
 	//Camera position
 	static float fPos = 0.0f;
-	m_pCamera->SetPosition(vector3(fPos, 0.0f, 10.0f));
-	m_pCamera->SetTarget(vector3(fPos, 0.0f, 9.0f));
-	fPos -= 0.01f;
+	m_pCamera->SetPosition(vector3(0.0f, 0.0f, 10.0f));
+	m_pCamera->SetTarget(vector3(0.0f, 0.0f, 0.0f));
+	m_pCamera->SetUp(vector3(0.0f, 1.0f, 0.0f));
+	fPos -= 0.1f;
+	int width = m_pSystem->GetWindowWidth();
+	int height = m_pSystem->GetWindowHeight();
+
+	m_pCamera->CalculateProjectionMatrix(width, height);
+
+	//m_pCameraMngr->SetFOV(fPos + 45.0f);
 	/* 
 	Steve is in the dll's Camera class space, while the other primitives
 	are in the MyCamera class space so they seem to be separating altough
