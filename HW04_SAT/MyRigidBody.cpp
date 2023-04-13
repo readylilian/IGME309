@@ -1,6 +1,6 @@
 #include "MyRigidBody.h"
 using namespace BTX;
-//Allocation
+//AllocationmyDirection
 uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 {
 	//TODO: Calculate the SAT algorithm I STRONGLY suggest you use the
@@ -10,29 +10,29 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 	float ra, rb;
 	matrix3 Rotation, AbsRot;
 
-	vector3 myCenter[3];
-	//this->GetModelMatrix()[0];
-	myCenter[0] = this->GetModelMatrix()[0];
-	myCenter[1] = this->GetModelMatrix()[1];
-	myCenter[2] = this->GetModelMatrix()[2];
+	vector3 myDirection[3];
 
-	vector3 theirCenter[3];
-	theirCenter[0] = a_pOther->GetModelMatrix()[0];
-	theirCenter[1] = a_pOther->GetModelMatrix()[1];
-	theirCenter[2] = a_pOther->GetModelMatrix()[2];
+	myDirection[0] = this->GetModelMatrix()[0];
+	myDirection[1] = this->GetModelMatrix()[1];
+	myDirection[2] = this->GetModelMatrix()[2];
+
+	vector3 theirDirection[3];
+	theirDirection[0] = a_pOther->GetModelMatrix()[0];
+	theirDirection[1] = a_pOther->GetModelMatrix()[1];
+	theirDirection[2] = a_pOther->GetModelMatrix()[2];
 
 	//Set up the rotations
 	for (int i = 0; i < 3; i++)
 	{
 		for (int j = 0; j < 3; j++)
 		{
-			Rotation[i][j] = glm::dot(myCenter[i], theirCenter[j]);
+			Rotation[i][j] = glm::dot(myDirection[i], theirDirection[j]);
 		}
 	}
 	//Compute the translation vector
 	vector3 translation = this->GetCenterGlobal() - a_pOther->GetCenterGlobal();
 	
-	translation = vector3(glm::dot(translation, myCenter[0]), glm::dot(translation, myCenter[1]), glm::dot(translation, myCenter[2]));
+	translation = vector3(glm::dot(translation, myDirection[0]), glm::dot(translation, myDirection[1]), glm::dot(translation, myDirection[2]));
 	//Set up the absolute rotations
 	for (int i = 0; i < 3; i++)
 	{
@@ -47,14 +47,14 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 		ra = this->GetHalfWidth()[i];
 		rb = a_pOther->GetHalfWidth()[0] * AbsRot[i][0] + a_pOther->GetHalfWidth()[1] * AbsRot[i][1] + a_pOther->GetHalfWidth()[2] * AbsRot[i][2];
 		//Opposite of written, testing for plane
-		if (glm::abs(translation[i]) <= ra + rb)
+		if (glm::abs(translation[i]) > ra + rb)
 		{
 			if(i == 1)
-				return BTXs::eSATResults::SAT_AX;
+				return BTXs::eSATResults::SAT_NONE;
 			if(i == 2)
-				return BTXs::eSATResults::SAT_AY;
+				return BTXs::eSATResults::SAT_NONE;
 			if (i == 3)
-				return BTXs::eSATResults::SAT_AZ;
+				return BTXs::eSATResults::SAT_NONE;
 		}
 	}
 
@@ -62,64 +62,64 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 	for (int i = 0; i < 3; i++) {
 		ra = this->GetHalfWidth()[0] * AbsRot[0][i] + this->GetHalfWidth()[1] * AbsRot[1][i] + this->GetHalfWidth()[2] * AbsRot[2][i];
 		rb = a_pOther->GetHalfWidth()[i];
-		if (glm::abs(translation[0] * Rotation[0][i] + translation[1] * Rotation[1][i] + translation[2] * Rotation[2][i]) <= ra + rb)
+		if (glm::abs(translation[0] * Rotation[0][i] + translation[1] * Rotation[1][i] + translation[2] * Rotation[2][i]) > ra + rb)
 		{
 			if (i == 1)
-				return BTXs::eSATResults::SAT_BX;
+				return BTXs::eSATResults::SAT_NONE;
 			if (i == 2)
-				return BTXs::eSATResults::SAT_BY;
+				return BTXs::eSATResults::SAT_NONE;
 			if (i == 3)
-				return BTXs::eSATResults::SAT_BZ;
+				return BTXs::eSATResults::SAT_NONE;
 		}
 	}
 
 	// Test axis L = A0 x B0
 	ra = this->GetHalfWidth()[1] * AbsRot[2][0] + this->GetHalfWidth()[2] * AbsRot[1][0];
 	rb = a_pOther->GetHalfWidth()[1] * AbsRot[0][2] + a_pOther->GetHalfWidth()[2] * AbsRot[0][1];
-	if (glm::abs(translation[2] * Rotation[1][0] - translation[1] * Rotation[2][0]) <= ra + rb) return BTXs::eSATResults::SAT_AXxBX;
+	if (glm::abs(translation[2] * Rotation[1][0] - translation[1] * Rotation[2][0]) > ra + rb) return BTXs::eSATResults::SAT_NONE;
 	
 	// Test axis L = A0 x B1
 	ra = this->GetHalfWidth()[1] * AbsRot[2][1] + this->GetHalfWidth()[2] * AbsRot[1][1];
 	rb = a_pOther->GetHalfWidth()[0] * AbsRot[0][2] + a_pOther->GetHalfWidth()[2] * AbsRot[0][0];
-	if (glm::abs(translation[2] * Rotation[1][1] - translation[1] * Rotation[2][1]) <= ra + rb) return BTXs::eSATResults::SAT_AXxBY;
+	if (glm::abs(translation[2] * Rotation[1][1] - translation[1] * Rotation[2][1]) > ra + rb) return BTXs::eSATResults::SAT_NONE;
 	
 	// Test axis L = A0 x B2
 	ra = this->GetHalfWidth()[1] * AbsRot[2][2] + this->GetHalfWidth()[2] * AbsRot[1][2];
 	rb = a_pOther->GetHalfWidth()[0] * AbsRot[0][1] + a_pOther->GetHalfWidth()[1] * AbsRot[0][0];
-	if (glm::abs(translation[2] * Rotation[1][2] - translation[1] * Rotation[2][2]) <= ra + rb) return BTXs::eSATResults::SAT_AXxBZ;
+	if (glm::abs(translation[2] * Rotation[1][2] - translation[1] * Rotation[2][2]) > ra + rb) return BTXs::eSATResults::SAT_NONE;
 	
 	// Test axis L = A1 x B0
 	ra = this->GetHalfWidth()[0] * AbsRot[2][0] + this->GetHalfWidth()[2] * AbsRot[0][0];
 	rb = a_pOther->GetHalfWidth()[1] * AbsRot[1][2] + a_pOther->GetHalfWidth()[2] * AbsRot[1][1];
-	if (glm::abs(translation[0] * Rotation[2][0] - translation[2] * Rotation[0][0]) <= ra + rb) return BTXs::eSATResults::SAT_AYxBX;
+	if (glm::abs(translation[0] * Rotation[2][0] - translation[2] * Rotation[0][0]) > ra + rb) return BTXs::eSATResults::SAT_NONE;
 	
 	// Test axis L = A1 x B1
 	ra = this->GetHalfWidth()[0] * AbsRot[2][1] + this->GetHalfWidth()[2] * AbsRot[0][1];
 	rb = a_pOther->GetHalfWidth()[0] * AbsRot[1][2] + a_pOther->GetHalfWidth()[2] * AbsRot[1][0];
-	if (glm::abs(translation[0] * Rotation[2][1] - translation[2] * Rotation[0][1]) <= ra + rb) return BTXs::eSATResults::SAT_AYxBY;
+	if (glm::abs(translation[0] * Rotation[2][1] - translation[2] * Rotation[0][1]) > ra + rb) return BTXs::eSATResults::SAT_NONE;
 	
 	// Test axis L = A1 x B2
 	ra = this->GetHalfWidth()[0] * AbsRot[2][2] + this->GetHalfWidth()[2] * AbsRot[0][2];
 	rb = a_pOther->GetHalfWidth()[0] * AbsRot[1][1] + a_pOther->GetHalfWidth()[1] * AbsRot[1][0];
-	if (glm::abs(translation[0] * Rotation[2][2] - translation[2] * Rotation[0][2]) <= ra + rb) return BTXs::eSATResults::SAT_AYxBZ;
+	if (glm::abs(translation[0] * Rotation[2][2] - translation[2] * Rotation[0][2]) > ra + rb) return BTXs::eSATResults::SAT_NONE;
 	
 	// Test axis L = A2 x B0
 	ra = this->GetHalfWidth()[0] * AbsRot[1][0] + this->GetHalfWidth()[1] * AbsRot[0][0];
 	rb = a_pOther->GetHalfWidth()[1] * AbsRot[2][2] + a_pOther->GetHalfWidth()[2] * AbsRot[2][1];
-	if (glm::abs(translation[1] * Rotation[0][0] - translation[0] * Rotation[1][0]) <= ra + rb) return BTXs::eSATResults::SAT_AZxBX;
+	if (glm::abs(translation[1] * Rotation[0][0] - translation[0] * Rotation[1][0]) > ra + rb) return BTXs::eSATResults::SAT_NONE;
 	
 	// Test axis L = A2 x B1
 	ra = this->GetHalfWidth()[0] * AbsRot[1][1] + this->GetHalfWidth()[1] * AbsRot[0][1];
 	rb = a_pOther->GetHalfWidth()[0] * AbsRot[2][2] + a_pOther->GetHalfWidth()[2] * AbsRot[2][0];
-	if (glm::abs(translation[1] * Rotation[0][1] - translation[0] * Rotation[1][1]) <= ra + rb) return BTXs::eSATResults::SAT_AZxBY;
+	if (glm::abs(translation[1] * Rotation[0][1] - translation[0] * Rotation[1][1]) > ra + rb) return BTXs::eSATResults::SAT_NONE;
 	
 	// Test axis L = A2 x B2
 	ra = this->GetHalfWidth()[0] * AbsRot[1][2] + this->GetHalfWidth()[1] * AbsRot[0][2];
 	rb = a_pOther->GetHalfWidth()[0] * AbsRot[2][1] + a_pOther->GetHalfWidth()[1] * AbsRot[2][0];
-	if (glm::abs(translation[1] * Rotation[0][2] - translation[0] * Rotation[1][2]) <= ra + rb) return BTXs::eSATResults::SAT_AZxBZ;
+	if (glm::abs(translation[1] * Rotation[0][2] - translation[0] * Rotation[1][2]) > ra + rb) return BTXs::eSATResults::SAT_NONE;
 	
 	//If you hit this point there's no collison
-	return BTXs::eSATResults::SAT_NONE;
+	return BTXs::eSATResults::SAT_AX;
 }
 bool MyRigidBody::IsColliding(MyRigidBody* const a_pOther)
 {
