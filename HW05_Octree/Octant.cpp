@@ -19,6 +19,45 @@ Octant::Octant(uint a_nMaxLevel, uint a_nIdealEntityCount)
 	m_pRoot = this;
 	m_lChild.clear();
 
+	//uint test = m_EntityList[0];
+	//Entity* testEntity = m_pEntityMngr->GetEntity(m_EntityList[0]);
+
+	vector3 localMin = m_pEntityMngr->GetEntity(0)->GetPosition();
+	vector3 localMax = m_pEntityMngr->GetEntity(0)->GetPosition();
+	m_EntityList.push_back(0);
+
+	for (int i = 1; i < m_pEntityMngr->GetEntityCount(); i++)
+	{
+		m_EntityList.push_back(i);
+		vector3 currentPos = m_pEntityMngr->GetEntity(i)->GetPosition();
+		if (currentPos.x < localMin.x)
+		{
+			localMin.x = currentPos.x;
+		}
+		else if (currentPos.x > localMax.x)
+		{
+			localMax.x = currentPos.x;
+		}
+		//Y
+		if (currentPos.y < localMin.y)
+		{
+			localMin.y = currentPos.y;
+		}
+		else if (currentPos.y > localMax.y)
+		{
+			localMax.y = currentPos.y;
+		}
+		//Z
+		if (currentPos.z < localMin.z)
+		{
+			localMin.z = currentPos.z;
+		}
+		else if (currentPos.z > localMax.z)
+		{
+			localMax.z = currentPos.z;
+		}
+	}
+
 	//create a rigid body that encloses all the objects in this octant, it necessary you will need
 	//to subdivide the octant based on how many objects are in it already an how many you IDEALLY
 	//want in it, remember each subdivision will create 8 children for this octant but not all children
@@ -26,8 +65,8 @@ Octant::Octant(uint a_nMaxLevel, uint a_nIdealEntityCount)
 
 	//The following is a made-up size, you need to make sure it is measuring all the object boxes in the world
 	std::vector<vector3> lMinMax;
-	lMinMax.push_back(vector3(-50.0f));
-	lMinMax.push_back(vector3(25.0f));
+	lMinMax.push_back(localMax);
+	lMinMax.push_back(localMin);
 	RigidBody pRigidBody = RigidBody(lMinMax);
 
 
@@ -48,7 +87,38 @@ bool Octant::IsColliding(uint a_uRBIndex)
 	//If the index given is larger than the number of elements in the bounding object there is no collision
 	//As the Octree will never rotate or scale this collision is as easy as an Axis Alligned Bounding Box
 	//Get all vectors in global space (the octant ones are already in Global)
-	return true; // for the sake of startup code
+
+	bool bColliding = true;
+	vector3 checking = m_pEntityMngr->GetEntity(a_uRBIndex)->GetPosition();
+	
+	//If the index given is larger than the number of elements in the bounding object there is no collision
+	if (a_uRBIndex >= m_EntityList.size())
+	{
+		return false;
+	}
+
+	//Check every item in the octant for collision
+	for (int i = 0; i < m_EntityList.size(); i++)
+	{
+		vector3 otherObj = m_pEntityMngr->GetEntity(i)->GetPosition();
+		//X crossing
+		if (otherObj.x < checking.x)
+			bColliding = false;
+		if (otherObj.x > checking.x)
+			bColliding = false;
+		//Y crossing
+		if (otherObj.y < checking.y)
+			bColliding = false;
+		if (otherObj.y > checking.y)
+			bColliding = false;
+		//Z crossing
+		if (otherObj.z < checking.z)
+			bColliding = false;
+		if (otherObj.z > checking.z)
+			bColliding = false;
+	}
+
+	return bColliding; // for the sake of startup code
 }
 void Octant::Display(uint a_nIndex, vector3 a_v3Color)
 {
@@ -72,6 +142,18 @@ void Octant::Subdivide(void)
 		return;
 
 	//Subdivide the space and allocate 8 children
+	// Iterate through entity list, check if these are within child's bounds, add them to their list
+	// CHILD ONE of a square
+	//Child's height = parent height / 2
+	//Child's center = parent's center.x + childHeight, parent center.y + childheight
+	// Child max = childcenter.x + childHeight, childcenter.y + h
+	// Child m-n = childcenter.x - childHeight, childcenter.y - h
+	//CHILD TWO
+	//Child's center = parent's center.x - childHeight, parent center.y + childheight
+	//CHILD THREE
+	//Child's center = parent's center.x - childHeight, parent center.y - childheight
+	//CHILD THREE
+	//Child's center = parent's center.x + childHeight, parent center.y - childheight
 }
 bool Octant::ContainsAtLeast(uint a_nEntities)
 {
