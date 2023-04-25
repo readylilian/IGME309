@@ -130,6 +130,14 @@ void Octant::Display(vector3 a_v3Color)
 	//even if other objects are created
 	m_pModelMngr->AddWireCubeToRenderList(glm::translate(IDENTITY_M4, m_v3Center) *
 		glm::scale(vector3(m_fSize)), a_v3Color);
+
+	if (m_uChildren != 0)
+	{
+		for (int i = 0; i < 8; i++)
+		{
+			m_pChild[i]->Display();
+		}
+	}
 }
 void Octant::Subdivide(void)
 {
@@ -143,17 +151,30 @@ void Octant::Subdivide(void)
 
 	//Subdivide the space and allocate 8 children
 	// Iterate through entity list, check if these are within child's bounds, add them to their list
+	// (Assign ID to Entity)
 	// CHILD ONE of a square
 	//Child's height = parent height / 2
 	//Child's center = parent's center.x + childHeight, parent center.y + childheight
 	// Child max = childcenter.x + childHeight, childcenter.y + h
 	// Child m-n = childcenter.x - childHeight, childcenter.y - h
+	float tempChild = m_fSize / 2;
+	m_pChild[0] = &Octant(vector3(m_v3Center.x + tempChild, m_v3Center.y + tempChild, m_v3Center.z + tempChild), tempChild);
 	//CHILD TWO
 	//Child's center = parent's center.x - childHeight, parent center.y + childheight
+	m_pChild[1] = &Octant(vector3(m_v3Center.x - tempChild, m_v3Center.y + tempChild, m_v3Center.z + tempChild), tempChild);
 	//CHILD THREE
 	//Child's center = parent's center.x - childHeight, parent center.y - childheight
+	m_pChild[2] = &Octant(vector3(m_v3Center.x - tempChild, m_v3Center.y - tempChild, m_v3Center.z + tempChild), tempChild);
 	//CHILD THREE
 	//Child's center = parent's center.x + childHeight, parent center.y - childheight
+	m_pChild[3] = &Octant(vector3(m_v3Center.x + tempChild, m_v3Center.y - tempChild, m_v3Center.z + tempChild), tempChild);
+
+	m_pChild[4] = &Octant(vector3(m_v3Center.x + tempChild, m_v3Center.y + tempChild, m_v3Center.z - tempChild), tempChild);
+	m_pChild[5] = &Octant(vector3(m_v3Center.x - tempChild, m_v3Center.y + tempChild, m_v3Center.z - tempChild), tempChild);
+	m_pChild[6] = &Octant(vector3(m_v3Center.x - tempChild, m_v3Center.y - tempChild, m_v3Center.z - tempChild), tempChild);
+	m_pChild[7] = &Octant(vector3(m_v3Center.x + tempChild, m_v3Center.y - tempChild, m_v3Center.z - tempChild), tempChild);
+
+	m_uChildren = 8;
 }
 bool Octant::ContainsAtLeast(uint a_nEntities)
 {
