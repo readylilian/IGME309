@@ -123,6 +123,8 @@ bool Octant::IsColliding(uint a_uRBIndex)
 void Octant::Display(uint a_nIndex, vector3 a_v3Color)
 {
 	// Display the specified octant
+	//m_pModelMngr->AddWireCubeToRenderList(glm::translate(IDENTITY_M4, m_v3Center) *
+		//glm::scale(vector3(m_fSize)), a_v3Color);
 }
 void Octant::Display(vector3 a_v3Color)
 {
@@ -150,43 +152,91 @@ void Octant::Subdivide(void)
 		return;
 
 	//Subdivide the space and allocate 8 children
-	// Iterate through entity list, check if these are within child's bounds, add them to their list
-	// (Assign ID to Entity)
 	// CHILD ONE of a square
-	//Child's height = parent height / 2
-	//Child's center = parent's center.x + childHeight, parent center.y + childheight
+	// Child's height = parent height / 2
+	// Child's center = parent's center.x + childHeight, parent center.y + childheight
 	// Child max = childcenter.x + childHeight, childcenter.y + h
 	// Child m-n = childcenter.x - childHeight, childcenter.y - h
-	float tempChild = m_fSize / 2;
-	m_pChild[0] = &Octant(vector3(m_v3Center.x + tempChild, m_v3Center.y + tempChild, m_v3Center.z + tempChild), tempChild);
+	float tempChild = m_fSize / 4;
+	 m_pChild[0] = new Octant(vector3(m_v3Center.x + tempChild, m_v3Center.y + tempChild, m_v3Center.z + tempChild), tempChild * 2);
 	//CHILD TWO
 	//Child's center = parent's center.x - childHeight, parent center.y + childheight
-	m_pChild[1] = &Octant(vector3(m_v3Center.x - tempChild, m_v3Center.y + tempChild, m_v3Center.z + tempChild), tempChild);
+	m_pChild[1] = new Octant(vector3(m_v3Center.x - tempChild, m_v3Center.y + tempChild, m_v3Center.z + tempChild), tempChild * 2);
 	//CHILD THREE
 	//Child's center = parent's center.x - childHeight, parent center.y - childheight
-	m_pChild[2] = &Octant(vector3(m_v3Center.x - tempChild, m_v3Center.y - tempChild, m_v3Center.z + tempChild), tempChild);
+	m_pChild[2] = new Octant(vector3(m_v3Center.x - tempChild, m_v3Center.y - tempChild, m_v3Center.z + tempChild), tempChild * 2);
 	//CHILD THREE
 	//Child's center = parent's center.x + childHeight, parent center.y - childheight
-	m_pChild[3] = &Octant(vector3(m_v3Center.x + tempChild, m_v3Center.y - tempChild, m_v3Center.z + tempChild), tempChild);
+	m_pChild[3] = new Octant(vector3(m_v3Center.x + tempChild, m_v3Center.y - tempChild, m_v3Center.z + tempChild), tempChild * 2);
 
-	m_pChild[4] = &Octant(vector3(m_v3Center.x + tempChild, m_v3Center.y + tempChild, m_v3Center.z - tempChild), tempChild);
-	m_pChild[5] = &Octant(vector3(m_v3Center.x - tempChild, m_v3Center.y + tempChild, m_v3Center.z - tempChild), tempChild);
-	m_pChild[6] = &Octant(vector3(m_v3Center.x - tempChild, m_v3Center.y - tempChild, m_v3Center.z - tempChild), tempChild);
-	m_pChild[7] = &Octant(vector3(m_v3Center.x + tempChild, m_v3Center.y - tempChild, m_v3Center.z - tempChild), tempChild);
+	m_pChild[4] = new Octant(vector3(m_v3Center.x + tempChild, m_v3Center.y + tempChild, m_v3Center.z - tempChild), tempChild * 2);
+	m_pChild[5] = new Octant(vector3(m_v3Center.x - tempChild, m_v3Center.y + tempChild, m_v3Center.z - tempChild), tempChild * 2);
+	m_pChild[6] = new Octant(vector3(m_v3Center.x - tempChild, m_v3Center.y - tempChild, m_v3Center.z - tempChild), tempChild * 2);
+	m_pChild[7] = new Octant(vector3(m_v3Center.x + tempChild, m_v3Center.y - tempChild, m_v3Center.z - tempChild), tempChild * 2);
 
 	m_uChildren = 8;
+	//m_uOctantCount += 8;
+
+	for (int j = 0; j < 8; j++)
+	{
+		m_pChild[j]->m_pParent = this;
+	}
+	if (m_uLevel + 1 >= m_uMaxLevel)
+		return;
+
+
 }
 bool Octant::ContainsAtLeast(uint a_nEntities)
 {
 	//You need to check how many entity objects live within this octant
-	return false; //return something for the sake of start up code
+	if (m_pEntityMngr->GetEntityCount() < a_nEntities)
+	{
+		return false;
+	}
+	return true; //return something for the sake of start up code
 }
 void Octant::AssignIDtoEntity(void)
 {
 	//Recursive method
 	//Have to traverse the tree and make sure to tell the entity manager
 	//what octant (space) each object is at
-	m_pEntityMngr->AddDimension(0, m_uID);//example only, take the first entity and tell it its on this space
+	//m_pEntityMngr->AddDimension(0, m_uID);//example only, take the first entity and tell it its on this space
+	for (int i = 0; i < m_pEntityMngr->GetEntityCount(); i++)
+	{
+		if (this->m_uChildren != 0)
+		{
+			for (int j = 0; j < 8; j++)
+			{
+				m_pChild[j]->AssignIDtoEntity();
+			}
+		}
+		bool bColliding = true;
+		vector3 entity = m_pEntityMngr->GetEntity(i)->GetPosition();
+		vector3 selfMin = GetMinGlobal();
+		vector3 selfMax = GetMaxGlobal();
+
+		//X crossing
+		if (entity.x < selfMin.x)
+			bColliding = false;
+		if (entity.x > selfMax.x)
+			bColliding = false;
+		//Y crossing
+		if (entity.y < selfMin.y)
+			bColliding = false;
+		if (entity.y > selfMax.y)
+			bColliding = false;
+		//Z crossing
+		if (entity.z < selfMin.z)
+			bColliding = false;
+		if (entity.z > selfMax.z)
+			bColliding = false;
+
+		if (bColliding == true)
+		{
+			m_pEntityMngr->AddDimension(i, m_uID);
+		}
+	}
+	
 }
 //-------------------------------------------------------------------------------------------------------------------
 // You can assume the following is fine and does not need changes, you may add onto it but the code is fine as is
