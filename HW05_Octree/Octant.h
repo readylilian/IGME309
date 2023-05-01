@@ -35,6 +35,8 @@ class Octant
 
 	std::vector<uint> m_EntityList; //List of Entities under this octant (their index under Entity Manager)
 
+	std::vector<uint> m_ActualEntityList; //List of Entities under this octant (their index under Entity Manager)
+
 	Octant* m_pRoot = nullptr;//Root octant
 	std::vector<Octant*> m_lChild; //list of nodes that contain objects (this will be applied to root only)
 	

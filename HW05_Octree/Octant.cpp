@@ -24,11 +24,9 @@ Octant::Octant(uint a_nMaxLevel, uint a_nIdealEntityCount)
 
 	vector3 localMin = m_pEntityMngr->GetEntity(0)->GetPosition();
 	vector3 localMax = m_pEntityMngr->GetEntity(0)->GetPosition();
-	m_EntityList.push_back(0);
 
 	for (int i = 1; i < m_pEntityMngr->GetEntityCount(); i++)
 	{
-		m_EntityList.push_back(i);
 		vector3 currentPos = m_pEntityMngr->GetEntity(i)->GetPosition();
 		if (currentPos.x < localMin.x)
 		{
@@ -90,31 +88,34 @@ bool Octant::IsColliding(uint a_uRBIndex)
 
 	bool bColliding = true;
 	vector3 checking = m_pEntityMngr->GetEntity(a_uRBIndex)->GetPosition();
-	
+	vector3 checkMin = checking - m_pEntityMngr->GetEntity(a_uRBIndex)->GetRigidBody()->GetHalfWidth();
+	vector3 checkMax = checking - m_pEntityMngr->GetEntity(a_uRBIndex)->GetRigidBody()->GetHalfWidth();
 	//If the index given is larger than the number of elements in the bounding object there is no collision
-	if (a_uRBIndex >= m_EntityList.size())
+	if (a_uRBIndex >= m_ActualEntityList.size())
 	{
 		return false;
 	}
 
 	//Check every item in the octant for collision
-	for (int i = 0; i < m_EntityList.size(); i++)
+	for (int i = 0; i < m_ActualEntityList.size(); i++)
 	{
 		vector3 otherObj = m_pEntityMngr->GetEntity(i)->GetPosition();
+		vector3 otherMin = otherObj - m_pEntityMngr->GetEntity(i)->GetRigidBody()->GetHalfWidth();
+		vector3 otherMax = otherObj - m_pEntityMngr->GetEntity(i)->GetRigidBody()->GetHalfWidth();
 		//X crossing
-		if (otherObj.x < checking.x)
+		if (otherMax.x < checkMin.x)
 			bColliding = false;
-		if (otherObj.x > checking.x)
+		if (otherMin.x > checkMax.x)
 			bColliding = false;
 		//Y crossing
-		if (otherObj.y < checking.y)
+		if (otherMin.y < checkMin.y)
 			bColliding = false;
-		if (otherObj.y > checking.y)
+		if (otherMin.y > checkMax.y)
 			bColliding = false;
 		//Z crossing
-		if (otherObj.z < checking.z)
+		if (otherMin.z < checkMin.z)
 			bColliding = false;
-		if (otherObj.z > checking.z)
+		if (otherMin.z > checkMax.z)
 			bColliding = false;
 	}
 
@@ -123,16 +124,32 @@ bool Octant::IsColliding(uint a_uRBIndex)
 void Octant::Display(uint a_nIndex, vector3 a_v3Color)
 {
 	// Display the specified octant
-	//m_pModelMngr->AddWireCubeToRenderList(glm::translate(IDENTITY_M4, m_v3Center) *
-		//glm::scale(vector3(m_fSize)), a_v3Color);
+	if (m_uID == a_nIndex)
+	{
+		m_pModelMngr->AddWireCubeToRenderList(glm::translate(IDENTITY_M4, m_v3Center) *
+			glm::scale(vector3(m_fSize)), a_v3Color);
+		return;
+	}
+	if (a_nIndex < m_uID)
+		return;
+	//If it's not this octanct check the kids
+	else if(m_uChildren != 0)
+	{
+		for (int j = 0; j < 8; j++)
+		{
+			m_pChild[j]->Display(a_nIndex, a_v3Color);
+		}
+	}
 }
 void Octant::Display(vector3 a_v3Color)
 {
 	//this is meant to be a recursive method, in starter code will only display the root
 	//even if other objects are created
+	//Display this octant
 	m_pModelMngr->AddWireCubeToRenderList(glm::translate(IDENTITY_M4, m_v3Center) *
 		glm::scale(vector3(m_fSize)), a_v3Color);
 
+	//If there are childrem, display them
 	if (m_uChildren != 0)
 	{
 		for (int i = 0; i < 8; i++)
@@ -175,21 +192,77 @@ void Octant::Subdivide(void)
 	m_pChild[7] = new Octant(vector3(m_v3Center.x + tempChild, m_v3Center.y - tempChild, m_v3Center.z - tempChild), tempChild * 2);
 
 	m_uChildren = 8;
-	//m_uOctantCount += 8;
 
+	//Set up entity list for children if we're at the root
+	if (this == m_pRoot)
+	{
+		for (int i = 0; i < m_pEntityMngr->GetEntityCount(); i++)
+		{
+			m_ActualEntityList.push_back(i);
+		}
+	}
+
+	
 	for (int j = 0; j < 8; j++)
 	{
+		//Set chidren's parent, m_uLevel, and their entity lists
 		m_pChild[j]->m_pParent = this;
+		m_pChild[j]->m_uLevel = this->m_uLevel + 1;
+
+		for (int i = 0; i < m_ActualEntityList.size(); i++)
+		{
+			//Collision detection for the entity
+			vector3 entity = m_pEntityMngr->GetEntity(m_ActualEntityList[i])->GetPosition();
+			vector3 entityMin = entity - m_pEntityMngr->GetEntity(i)->GetRigidBody()->GetHalfWidth();
+			vector3 entityMax = entity - m_pEntityMngr->GetEntity(i)->GetRigidBody()->GetHalfWidth();
+
+			vector3 selfMin = m_pChild[j]->GetMinGlobal();
+			vector3 selfMax = m_pChild[j]->GetMaxGlobal();
+			boolean bColliding = true;
+
+			//X crossing
+			if (entityMax.x < selfMin.x)
+				bColliding = false;
+			if (entityMin.x > selfMax.x)
+				bColliding = false;
+			//Y crossing
+			if (entityMax.y < selfMin.y)
+				bColliding = false;
+			if (entityMin.y > selfMax.y)
+				bColliding = false;
+			//Z crossing
+			if (entityMax.z < selfMin.z)
+				bColliding = false;
+			if (entityMin.z > selfMax.z)
+				bColliding = false;
+
+			// If entity is in the child quadrant, add it
+			if (bColliding == true)
+			{
+				m_pChild[j]->m_ActualEntityList.push_back(m_ActualEntityList[i]);
+			}
+		}
+
+		//If the # of entities in the child is > ideal, subdivide again
+		if (m_pChild[j]->ContainsAtLeast(m_uIdealEntityCount))
+		{
+			m_pChild[j]->Subdivide();
+		}
 	}
-	if (m_uLevel + 1 >= m_uMaxLevel)
-		return;
 
-
+	//Remove the listing from the parent once it's assigned to a child, this keeps us from checking the same place twice for ids
+	m_ActualEntityList.clear();
 }
 bool Octant::ContainsAtLeast(uint a_nEntities)
 {
 	//You need to check how many entity objects live within this octant
-	if (m_pEntityMngr->GetEntityCount() < a_nEntities)
+	// For root check the entity count
+	if (this == m_pRoot && m_pEntityMngr->GetEntityCount() < a_nEntities)
+	{
+		return false;
+	}
+	// For anything else check the actual entity list
+	else if (this != m_pRoot && m_ActualEntityList.size() < a_nEntities)
 	{
 		return false;
 	}
@@ -200,40 +273,18 @@ void Octant::AssignIDtoEntity(void)
 	//Recursive method
 	//Have to traverse the tree and make sure to tell the entity manager
 	//what octant (space) each object is at
-	//m_pEntityMngr->AddDimension(0, m_uID);//example only, take the first entity and tell it its on this space
-	for (int i = 0; i < m_pEntityMngr->GetEntityCount(); i++)
+
+	//For every entity not contained by a child, add it to that level's dimension
+	for (int i = 0; i < m_ActualEntityList.size(); i++)
 	{
-		if (this->m_uChildren != 0)
+		m_pEntityMngr->AddDimension(m_ActualEntityList[i], m_uID);
+	}
+	//Otherwise assign it to the child dimension
+	if (this->m_uChildren != 0)
+	{
+		for (int j = 0; j < 8; j++)
 		{
-			for (int j = 0; j < 8; j++)
-			{
-				m_pChild[j]->AssignIDtoEntity();
-			}
-		}
-		bool bColliding = true;
-		vector3 entity = m_pEntityMngr->GetEntity(i)->GetPosition();
-		vector3 selfMin = GetMinGlobal();
-		vector3 selfMax = GetMaxGlobal();
-
-		//X crossing
-		if (entity.x < selfMin.x)
-			bColliding = false;
-		if (entity.x > selfMax.x)
-			bColliding = false;
-		//Y crossing
-		if (entity.y < selfMin.y)
-			bColliding = false;
-		if (entity.y > selfMax.y)
-			bColliding = false;
-		//Z crossing
-		if (entity.z < selfMin.z)
-			bColliding = false;
-		if (entity.z > selfMax.z)
-			bColliding = false;
-
-		if (bColliding == true)
-		{
-			m_pEntityMngr->AddDimension(i, m_uID);
+			m_pChild[j]->AssignIDtoEntity();
 		}
 	}
 	
